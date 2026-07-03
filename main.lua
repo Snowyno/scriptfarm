@@ -13,6 +13,8 @@
 -- Dentro deste script: loadstring de cada quest (Oscar, Pinion, Duskwire, TryHard) via HttpGet.
 -- Suba no GitHub: main.lua + Oscar.lua + Pinion.lua + Duskwire.lua + TryHardRod.lua
 
+print("[navegacao] main.lua v3 — carregando...")
+
 local PLAYER = game.Players.LocalPlayer
 local CHARACTER = PLAYER.Character or PLAYER.CharacterAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -3898,6 +3900,7 @@ end -- hud_quest_widgets
 do -- hud_create
 
 Nav.createHud = function()
+    Nav._hudRefs = hudRefs
     local playerGui = PLAYER:WaitForChild("PlayerGui")
 
     local existing = playerGui:FindFirstChild("NavegacaoHUD")
