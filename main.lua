@@ -3654,6 +3654,160 @@ Nav.makeQuestUndoButton = function(parent, stepKey, undoButtons, position, onUnd
     return undoBtn
 end
 
+Nav.makePinionQuestStepSection = function(parent, titleText, layoutOrder, mode, stepKey, withTeleport, withCompleteButton, teleportHandler, questNamespace)
+    questNamespace = questNamespace or "pinion"
+    withCompleteButton = withCompleteButton ~= false
+    local sectionHeight = 56
+    local statusHeight = sectionHeight - 24
+
+    local rightPad = 8
+    if withTeleport and withCompleteButton then
+        rightPad = 242
+    elseif withCompleteButton then
+        rightPad = 166
+    elseif withTeleport then
+        rightPad = 92
+    end
+
+    local section = Instance.new("Frame")
+    section.Name = "Section_" .. mode
+    section.Size = UDim2.new(1, 0, 0, sectionHeight)
+    section.BackgroundColor3 = Color3.fromRGB(30, 33, 40)
+    section.BorderSizePixel = 0
+    section.LayoutOrder = layoutOrder
+    section.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = section
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -rightPad, 0, 16)
+    title.Position = UDim2.fromOffset(8, 4)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 12
+    title.TextColor3 = Color3.fromRGB(200, 210, 225)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Text = titleText
+    title.Parent = section
+
+    local status = Instance.new("TextLabel")
+    status.Name = "Status"
+    status.Size = UDim2.new(1, -rightPad, 0, statusHeight)
+    status.Position = UDim2.fromOffset(8, 20)
+    status.BackgroundTransparency = 1
+    status.Font = Enum.Font.Gotham
+    status.TextSize = 10
+    status.TextColor3 = Color3.fromRGB(170, 178, 195)
+    status.TextXAlignment = Enum.TextXAlignment.Left
+    status.TextYAlignment = Enum.TextYAlignment.Top
+    status.TextWrapped = true
+    status.Text = "—"
+    status.Parent = section
+
+    hudRefs.statusLabels[mode] = status
+
+    if withTeleport then
+        local tpBtn = Instance.new("TextButton")
+        tpBtn.Name = "Teleport_" .. mode
+        tpBtn.Size = UDim2.fromOffset(72, 24)
+        tpBtn.Position = UDim2.new(1, -234, 0, 16)
+        tpBtn.BackgroundColor3 = Color3.fromRGB(46, 120, 180)
+        tpBtn.BorderSizePixel = 0
+        tpBtn.Font = Enum.Font.GothamBold
+        tpBtn.TextSize = 10
+        tpBtn.TextColor3 = Color3.new(1, 1, 1)
+        tpBtn.Text = "Teleportar"
+        tpBtn.Parent = section
+
+        local tpCorner = Instance.new("UICorner")
+        tpCorner.CornerRadius = UDim.new(0, 6)
+        tpCorner.Parent = tpBtn
+
+        trackConnection(tpBtn.MouseButton1Click:Connect(function()
+            task.spawn(function()
+                if teleportHandler then
+                    teleportHandler()
+                else
+                    Nav.teleportOnceToMode(mode)
+                end
+            end)
+        end))
+    end
+
+    if withCompleteButton then
+        local doneBtn = Instance.new("TextButton")
+        doneBtn.Name = "Done_" .. stepKey
+        doneBtn.Size = UDim2.fromOffset(72, 24)
+        doneBtn.Position = UDim2.new(1, -82, 0, 16)
+        doneBtn.BackgroundColor3 = Color3.fromRGB(90, 95, 110)
+        doneBtn.BorderSizePixel = 0
+        doneBtn.Font = Enum.Font.GothamBold
+        doneBtn.TextSize = 10
+        doneBtn.TextColor3 = Color3.new(1, 1, 1)
+        doneBtn.Text = "Concluído"
+        doneBtn.Parent = section
+
+        local doneCorner = Instance.new("UICorner")
+        doneCorner.CornerRadius = UDim.new(0, 6)
+        doneCorner.Parent = doneBtn
+
+        local completeButtons = questNamespace == "duskwire" and hudRefs.duskwireCompleteButtons
+            or questNamespace == "tryhard" and hudRefs.tryhardCompleteButtons
+            or hudRefs.pinionCompleteButtons
+        completeButtons[stepKey] = doneBtn
+
+        trackConnection(doneBtn.MouseButton1Click:Connect(function()
+            if questNamespace == "duskwire" then
+                Nav.markDuskwireQuestStepComplete(stepKey)
+                if Nav.updateDuskwireCompleteButton then
+                    Nav.updateDuskwireCompleteButton(stepKey, duskwireQuestProgress[stepKey] == true)
+                end
+            elseif questNamespace == "tryhard" then
+                Nav.markTryhardQuestStepComplete(stepKey)
+                if Nav.updateTryhardCompleteButton then
+                    Nav.updateTryhardCompleteButton(stepKey, tryhardQuestProgress[stepKey] == true)
+                end
+            elseif stepKey:sub(1, 7) == "heavens" then
+                if Nav.markHeavensStepComplete then
+                    Nav.markHeavensStepComplete(stepKey)
+                end
+                if Nav.updatePinionCompleteButton then
+                    Nav.updatePinionCompleteButton(stepKey, pinionHeavensProgress[stepKey] == true)
+                end
+            else
+                Nav.markPinionQuestStepComplete(stepKey)
+                if Nav.updatePinionCompleteButton then
+                    Nav.updatePinionCompleteButton(stepKey, pinionQuestProgress[stepKey] == true)
+                end
+            end
+        end))
+
+        local undoButtons = questNamespace == "duskwire" and hudRefs.duskwireUndoButtons
+            or questNamespace == "tryhard" and hudRefs.tryhardUndoButtons
+            or hudRefs.pinionUndoButtons
+        local function undoStep(key)
+            if questNamespace == "duskwire" then
+                Nav.unmarkDuskwireQuestStepComplete(key)
+            elseif questNamespace == "tryhard" then
+                Nav.unmarkTryhardQuestStepComplete(key)
+            else
+                Nav.unmarkPinionQuestStepComplete(key)
+            end
+        end
+        Nav.makeQuestUndoButton(
+            section,
+            stepKey,
+            undoButtons,
+            UDim2.new(1, -158, 0, 16),
+            undoStep
+        )
+    end
+
+    return section
+end
+
 Nav.makeRodProgressionSection = function(parent, layoutOrder)
     local section = Instance.new("Frame")
     section.Name = "Section_rod_progression"
