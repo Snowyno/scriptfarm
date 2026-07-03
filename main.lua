@@ -1484,6 +1484,8 @@ end -- core1b_avail
 
 local questUi = {}
 
+do -- quest_loader
+
 local QUEST_LOCAL_PATHS = {
     oscar = "quests/quest_oscar.lua",
     pinion = "quests/quest_pinion.lua",
@@ -1618,6 +1620,8 @@ local function loadAllQuestModules()
 end
 
 loadAllQuestModules()
+
+end -- quest_loader
 
 do -- core2a: utilitários de GUI e equip básico
 
@@ -3217,6 +3221,10 @@ Nav.startSellAllLoop = startSellAllLoop
 Nav.destroyScript = destroyScript
 
 end -- core3b
+
+do -- hud
+
+local bindQuestUiRefs
 
 -- ===== HUD (estado compartilhado) =====
 local toggleButtons = {}
@@ -5105,6 +5113,7 @@ Nav.createHud = function()
     end)
 
     print("[navegacao] HUD carregado — apenas teleporte, sem ações automáticas.")
+    bindQuestUiRefs()
 end
 
 end -- hud_create
@@ -5856,6 +5865,37 @@ Nav.updateStatusLabelsFull = function()
 end
 
 end -- hud_labels_refresh
+
+bindQuestUiRefs = function()
+    questUi.oscarStartRow = oscarStartRow
+    questUi.oscarStartBtn = oscarStartBtn
+    questUi.oscarRedoBtn = oscarRedoBtn
+    questUi.oscarStepSections = oscarStepSections
+    questUi.pinionStartRow = pinionStartRow
+    questUi.pinionStartBtn = pinionStartBtn
+    questUi.pinionRedoBtn = pinionRedoBtn
+    questUi.pinionHeader = pinionHeader
+    questUi.pinionStepSections = pinionStepSections
+    questUi.pinionCompleteButtons = pinionCompleteButtons
+    questUi.pinionUndoButtons = pinionUndoButtons
+    questUi.duskwireStartRow = duskwireStartRow
+    questUi.duskwireStartBtn = duskwireStartBtn
+    questUi.duskwireRedoBtn = duskwireRedoBtn
+    questUi.duskwireHeader = duskwireHeader
+    questUi.duskwireStepSections = duskwireStepSections
+    questUi.duskwireCompleteButtons = duskwireCompleteButtons
+    questUi.duskwireUndoButtons = duskwireUndoButtons
+    questUi.tryhardStartRow = tryhardStartRow
+    questUi.tryhardStartBtn = tryhardStartBtn
+    questUi.tryhardRedoBtn = tryhardRedoBtn
+    questUi.tryhardHeader = tryhardHeader
+    questUi.tryhardStepSections = tryhardStepSections
+    questUi.tryhardCompleteButtons = tryhardCompleteButtons
+    questUi.tryhardUndoButtons = tryhardUndoButtons
+    questUi.statusLabels = statusLabels
+end
+
+end -- hud
 
 
 -- ===== Inicialização =====
