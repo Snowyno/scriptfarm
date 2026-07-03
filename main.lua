@@ -3226,37 +3226,41 @@ do -- hud
 
 local bindQuestUiRefs
 
--- ===== HUD (estado compartilhado) =====
-local toggleButtons = {}
-local statusLabels = {}
-local oscarStepSections = {}
-local pinionStepSections = {}
-local pinionCompleteButtons = {}
-local pinionUndoButtons = {}
-local duskwireCompleteButtons = {}
-local duskwireUndoButtons = {}
-local tryhardCompleteButtons = {}
-local tryhardUndoButtons = {}
-local pinionHeader
-local duskwireHeader
-local tryhardHeader
-local oscarStartRow
-local oscarStartBtn
-local oscarRedoBtn
-local pinionStartRow
-local pinionStartBtn
-local pinionRedoBtn
-local duskwireStartRow
-local duskwireStartBtn
-local duskwireRedoBtn
-local tryhardStartRow
-local tryhardStartBtn
-local tryhardRedoBtn
-local duskwireStepSections = {}
-local tryhardStepSections = {}
-local activeHudTab = "home"
-local scrollHome, scrollQuest
-local tabBtnHome, tabBtnQuest
+-- ===== HUD (estado compartilhado — 1 local, evita limite 200) =====
+local hudRefs = {
+    toggleButtons = {},
+    statusLabels = {},
+    oscarStepSections = {},
+    pinionStepSections = {},
+    pinionCompleteButtons = {},
+    pinionUndoButtons = {},
+    duskwireCompleteButtons = {},
+    duskwireUndoButtons = {},
+    tryhardCompleteButtons = {},
+    tryhardUndoButtons = {},
+    pinionHeader = nil,
+    duskwireHeader = nil,
+    tryhardHeader = nil,
+    oscarStartRow = nil,
+    oscarStartBtn = nil,
+    oscarRedoBtn = nil,
+    pinionStartRow = nil,
+    pinionStartBtn = nil,
+    pinionRedoBtn = nil,
+    duskwireStartRow = nil,
+    duskwireStartBtn = nil,
+    duskwireRedoBtn = nil,
+    tryhardStartRow = nil,
+    tryhardStartBtn = nil,
+    tryhardRedoBtn = nil,
+    duskwireStepSections = {},
+    tryhardStepSections = {},
+    activeHudTab = "home",
+    scrollHome = nil,
+    scrollQuest = nil,
+    tabBtnHome = nil,
+    tabBtnQuest = nil,
+}
 
 local TAB_ACTIVE = Color3.fromRGB(46, 120, 180)
 local TAB_INACTIVE = Color3.fromRGB(40, 44, 54)
@@ -3266,16 +3270,16 @@ local TAB_TEXT_INACTIVE = Color3.fromRGB(150, 158, 175)
 do -- hud_ui
 
 Nav.setHudTab = function(tabName)
-    activeHudTab = tabName
-    if scrollHome then scrollHome.Visible = tabName == "home" end
-    if scrollQuest then scrollQuest.Visible = tabName == "quest" end
-    if tabBtnHome then
-        tabBtnHome.BackgroundColor3 = tabName == "home" and TAB_ACTIVE or TAB_INACTIVE
-        tabBtnHome.TextColor3 = tabName == "home" and TAB_TEXT_ACTIVE or TAB_TEXT_INACTIVE
+    hudRefs.activeHudTab = tabName
+    if hudRefs.scrollHome then hudRefs.scrollHome.Visible = tabName == "home" end
+    if hudRefs.scrollQuest then hudRefs.scrollQuest.Visible = tabName == "quest" end
+    if hudRefs.tabBtnHome then
+        hudRefs.tabBtnHome.BackgroundColor3 = tabName == "home" and TAB_ACTIVE or TAB_INACTIVE
+        hudRefs.tabBtnHome.TextColor3 = tabName == "home" and TAB_TEXT_ACTIVE or TAB_TEXT_INACTIVE
     end
-    if tabBtnQuest then
-        tabBtnQuest.BackgroundColor3 = tabName == "quest" and TAB_ACTIVE or TAB_INACTIVE
-        tabBtnQuest.TextColor3 = tabName == "quest" and TAB_TEXT_ACTIVE or TAB_TEXT_INACTIVE
+    if hudRefs.tabBtnQuest then
+        hudRefs.tabBtnQuest.BackgroundColor3 = tabName == "quest" and TAB_ACTIVE or TAB_INACTIVE
+        hudRefs.tabBtnQuest.TextColor3 = tabName == "quest" and TAB_TEXT_ACTIVE or TAB_TEXT_INACTIVE
     end
 end
 
@@ -3401,7 +3405,7 @@ Nav.makeToggleButton = function(parent, text, layoutOrder, mode, yOffset)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    toggleButtons[mode] = btn
+    hudRefs.toggleButtons[mode] = btn
 
     if mode == MODES.AUTO_SELL then
         trackConnection(btn.MouseButton1Click:Connect(Nav.toggleAutoSell))
@@ -3452,7 +3456,7 @@ Nav.makeAutoSellSection = function(parent, layoutOrder)
     status.TextWrapped = true
     status.Text = string.format("Vende inventário a cada %ds", SELL_ALL_INTERVAL)
     status.Parent = section
-    statusLabels[MODES.AUTO_SELL] = status
+    hudRefs.statusLabels[MODES.AUTO_SELL] = status
 
     Nav.makeToggleButton(section, "", layoutOrder, MODES.AUTO_SELL, 16)
     return section
@@ -3499,7 +3503,7 @@ Nav.makeSection = function(parent, titleText, statusText, layoutOrder, mode, sec
     status.Text = statusText or "—"
     status.Parent = section
 
-    statusLabels[mode] = status
+    hudRefs.statusLabels[mode] = status
     Nav.makeToggleButton(section, "", layoutOrder, mode, 16)
 
     return section
@@ -3546,7 +3550,7 @@ Nav.makeTeleportSection = function(parent, titleText, statusText, layoutOrder, m
     status.Text = statusText or "—"
     status.Parent = section
 
-    statusLabels[mode] = status
+    hudRefs.statusLabels[mode] = status
 
     local btn = Instance.new("TextButton")
     btn.Name = "Teleport_" .. mode
@@ -3980,14 +3984,14 @@ Nav.makeQuestUndoButton = function(parent, stepKey, undoButtons, position, onUnd
 end
 
 Nav.updateDuskwireCompleteButton = function(stepKey, done)
-    local btn = duskwireCompleteButtons[stepKey]
+    local btn = hudRefs.duskwireCompleteButtons[stepKey]
     if btn then
         btn.Text = "Concluído"
         btn.BackgroundColor3 = done and Color3.fromRGB(46, 160, 67) or Color3.fromRGB(90, 95, 110)
         btn.Active = not done
         btn.AutoButtonColor = not done
     end
-    local undoBtn = duskwireUndoButtons[stepKey]
+    local undoBtn = hudRefs.duskwireUndoButtons[stepKey]
     if undoBtn then
         undoBtn.Active = done == true
         undoBtn.AutoButtonColor = done == true
@@ -3996,14 +4000,14 @@ Nav.updateDuskwireCompleteButton = function(stepKey, done)
 end
 
 Nav.updateTryhardCompleteButton = function(stepKey, done)
-    local btn = tryhardCompleteButtons[stepKey]
+    local btn = hudRefs.tryhardCompleteButtons[stepKey]
     if btn then
         btn.Text = "Concluído"
         btn.BackgroundColor3 = done and Color3.fromRGB(46, 160, 67) or Color3.fromRGB(90, 95, 110)
         btn.Active = not done
         btn.AutoButtonColor = not done
     end
-    local undoBtn = tryhardUndoButtons[stepKey]
+    local undoBtn = hudRefs.tryhardUndoButtons[stepKey]
     if undoBtn then
         undoBtn.Active = done == true
         undoBtn.AutoButtonColor = done == true
@@ -4012,14 +4016,14 @@ Nav.updateTryhardCompleteButton = function(stepKey, done)
 end
 
 Nav.updatePinionCompleteButton = function(stepKey, done)
-    local btn = pinionCompleteButtons[stepKey]
+    local btn = hudRefs.pinionCompleteButtons[stepKey]
     if btn then
         btn.Text = "Concluído"
         btn.BackgroundColor3 = done and Color3.fromRGB(46, 160, 67) or Color3.fromRGB(90, 95, 110)
         btn.Active = not done
         btn.AutoButtonColor = not done
     end
-    local undoBtn = pinionUndoButtons[stepKey]
+    local undoBtn = hudRefs.pinionUndoButtons[stepKey]
     if undoBtn then
         undoBtn.Active = done == true
         undoBtn.AutoButtonColor = done == true
@@ -4079,7 +4083,7 @@ Nav.makePinionQuestStepSection = function(parent, titleText, layoutOrder, mode, 
     status.Text = "—"
     status.Parent = section
 
-    statusLabels[mode] = status
+    hudRefs.statusLabels[mode] = status
 
     if withTeleport then
         local tpBtn = Instance.new("TextButton")
@@ -4126,9 +4130,9 @@ Nav.makePinionQuestStepSection = function(parent, titleText, layoutOrder, mode, 
         doneCorner.CornerRadius = UDim.new(0, 6)
         doneCorner.Parent = doneBtn
 
-        local completeButtons = questNamespace == "duskwire" and duskwireCompleteButtons
-            or questNamespace == "tryhard" and tryhardCompleteButtons
-            or pinionCompleteButtons
+        local completeButtons = questNamespace == "duskwire" and hudRefs.duskwireCompleteButtons
+            or questNamespace == "tryhard" and hudRefs.tryhardCompleteButtons
+            or hudRefs.pinionCompleteButtons
         completeButtons[stepKey] = doneBtn
 
         trackConnection(doneBtn.MouseButton1Click:Connect(function()
@@ -4147,9 +4151,9 @@ Nav.makePinionQuestStepSection = function(parent, titleText, layoutOrder, mode, 
             end
         end))
 
-        local undoButtons = questNamespace == "duskwire" and duskwireUndoButtons
-            or questNamespace == "tryhard" and tryhardUndoButtons
-            or pinionUndoButtons
+        local undoButtons = questNamespace == "duskwire" and hudRefs.duskwireUndoButtons
+            or questNamespace == "tryhard" and hudRefs.tryhardUndoButtons
+            or hudRefs.pinionUndoButtons
         local function undoStep(key)
             if questNamespace == "duskwire" then
                 Nav.unmarkDuskwireQuestStepComplete(key)
@@ -4266,7 +4270,7 @@ Nav.makePinionHeavensCompleteRow = function(parent, y, stepKey, labelText)
     doneCorner.CornerRadius = UDim.new(0, 6)
     doneCorner.Parent = doneBtn
 
-    pinionCompleteButtons[stepKey] = doneBtn
+    hudRefs.pinionCompleteButtons[stepKey] = doneBtn
 
     trackConnection(doneBtn.MouseButton1Click:Connect(function()
         Nav.markHeavensStepComplete(stepKey)
@@ -4276,7 +4280,7 @@ Nav.makePinionHeavensCompleteRow = function(parent, y, stepKey, labelText)
     Nav.makeQuestUndoButton(
         row,
         stepKey,
-        pinionUndoButtons,
+        hudRefs.pinionUndoButtons,
         UDim2.new(1, -158, 0.5, -12),
         Nav.unmarkHeavensStepComplete
     )
@@ -4384,7 +4388,7 @@ Nav.makePinionHeavensStep5Section = function(parent, layoutOrder)
             spot.Z
         )
         status.Parent = row
-        statusLabels[mode] = status
+        hudRefs.statusLabels[mode] = status
 
         local tpBtn = Instance.new("TextButton")
         tpBtn.Name = "Teleport_" .. mode
@@ -4424,7 +4428,7 @@ Nav.makePinionHeavensStep5Section = function(parent, layoutOrder)
         doneCorner.CornerRadius = UDim.new(0, 6)
         doneCorner.Parent = doneBtn
 
-        pinionCompleteButtons[stepKey] = doneBtn
+        hudRefs.pinionCompleteButtons[stepKey] = doneBtn
 
         trackConnection(doneBtn.MouseButton1Click:Connect(function()
             Nav.markHeavensStepComplete(stepKey)
@@ -4434,7 +4438,7 @@ Nav.makePinionHeavensStep5Section = function(parent, layoutOrder)
         Nav.makeQuestUndoButton(
             row,
             stepKey,
-            pinionUndoButtons,
+            hudRefs.pinionUndoButtons,
             UDim2.new(1, -158, 0.5, -12),
             Nav.unmarkHeavensStepComplete
         )
@@ -4491,7 +4495,7 @@ Nav.makePinionHeavensStep6Section = function(parent, layoutOrder)
         PINION_HEAVENS_FINAL_SPOT.Z
     )
     status.Parent = section
-    statusLabels[mode] = status
+    hudRefs.statusLabels[mode] = status
 
     local tpBtn = Instance.new("TextButton")
     tpBtn.Name = "Teleport_" .. mode
@@ -4531,7 +4535,7 @@ Nav.makePinionHeavensStep6Section = function(parent, layoutOrder)
     doneCorner.CornerRadius = UDim.new(0, 6)
     doneCorner.Parent = doneBtn
 
-    pinionCompleteButtons[stepKey] = doneBtn
+    hudRefs.pinionCompleteButtons[stepKey] = doneBtn
 
     trackConnection(doneBtn.MouseButton1Click:Connect(function()
         Nav.markHeavensStepComplete(stepKey)
@@ -4541,7 +4545,7 @@ Nav.makePinionHeavensStep6Section = function(parent, layoutOrder)
     Nav.makeQuestUndoButton(
         section,
         stepKey,
-        pinionUndoButtons,
+        hudRefs.pinionUndoButtons,
         UDim2.new(1, -158, 0, 16),
         Nav.unmarkHeavensStepComplete
     )
@@ -4587,7 +4591,7 @@ Nav.makeRodProgressionSection = function(parent, layoutOrder)
     status.TextWrapped = true
     status.Text = "—"
     status.Parent = section
-    statusLabels.rod_progression = status
+    hudRefs.statusLabels.rod_progression = status
 
     local buyBtn = Instance.new("TextButton")
     buyBtn.Size = UDim2.fromOffset(88, 22)
@@ -4709,7 +4713,7 @@ Nav.createHud = function()
     playerStatus.TextXAlignment = Enum.TextXAlignment.Left
     playerStatus.Text = "Carregando..."
     playerStatus.Parent = panel
-    statusLabels.player = playerStatus
+    hudRefs.statusLabels.player = playerStatus
 
     local divider = Instance.new("Frame")
     divider.Size = UDim2.new(1, -16, 0, 1)
@@ -4731,14 +4735,14 @@ Nav.createHud = function()
     tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabLayout.Parent = tabBar
 
-    tabBtnHome = Nav.makeTabButton(tabBar, "HOME", 1)
-    tabBtnQuest = Nav.makeTabButton(tabBar, "Quest Rods", 2)
+    hudRefs.tabBtnHome = Nav.makeTabButton(tabBar, "HOME", 1)
+    hudRefs.tabBtnQuest = Nav.makeTabButton(tabBar, "Quest Rods", 2)
 
-    trackConnection(tabBtnHome.MouseButton1Click:Connect(function()
+    trackConnection(hudRefs.tabBtnHome.MouseButton1Click:Connect(function()
         Nav.setHudTab("home")
         if updateHudVisuals then updateHudVisuals(true) end
     end))
-    trackConnection(tabBtnQuest.MouseButton1Click:Connect(function()
+    trackConnection(hudRefs.tabBtnQuest.MouseButton1Click:Connect(function()
         Nav.setHudTab("quest")
         if updateHudVisuals then updateHudVisuals(true) end
     end))
@@ -4751,23 +4755,23 @@ Nav.createHud = function()
     content.ClipsDescendants = true
     content.Parent = panel
 
-    scrollHome = Nav.makeTabScroll(content)
-    scrollHome.Name = "ScrollHome"
-    scrollHome.Visible = true
+    hudRefs.scrollHome = Nav.makeTabScroll(content)
+    hudRefs.scrollHome.Name = "ScrollHome"
+    hudRefs.scrollHome.Visible = true
 
-    scrollQuest = Nav.makeTabScroll(content)
-    scrollQuest.Name = "ScrollQuest"
-    scrollQuest.Visible = false
+    hudRefs.scrollQuest = Nav.makeTabScroll(content)
+    hudRefs.scrollQuest.Name = "ScrollQuest"
+    hudRefs.scrollQuest.Visible = false
 
     -- Aba HOME
-    Nav.makeAutoSellSection(scrollHome, 1)
-    Nav.makeSection(scrollHome, "FARM", "—", 2, MODES.INITIAL_FARM, 72)
-    Nav.makeTeleportSection(scrollHome, "Farm XP", "Apenas teleporte — última área de farm", 3, MODES.XP_FARM)
-    Nav.makeTeleportSection(scrollHome, "Enchant (Altar)", "Apenas teleporte ao altar", 4, MODES.ENCHANT)
-    Nav.makeTeleportSection(scrollHome, "Comprar Relíquia", "—", 5, MODES.RELIC)
+    Nav.makeAutoSellSection(hudRefs.scrollHome, 1)
+    Nav.makeSection(hudRefs.scrollHome, "FARM", "—", 2, MODES.INITIAL_FARM, 72)
+    Nav.makeTeleportSection(hudRefs.scrollHome, "Farm XP", "Apenas teleporte — última área de farm", 3, MODES.XP_FARM)
+    Nav.makeTeleportSection(hudRefs.scrollHome, "Enchant (Altar)", "Apenas teleporte ao altar", 4, MODES.ENCHANT)
+    Nav.makeTeleportSection(hudRefs.scrollHome, "Comprar Relíquia", "—", 5, MODES.RELIC)
 
     -- Aba Quest Rods
-    Nav.makeRodProgressionSection(scrollQuest, 1)
+    Nav.makeRodProgressionSection(hudRefs.scrollQuest, 1)
 
     local oscarHeader = Instance.new("TextLabel")
     oscarHeader.Size = UDim2.new(1, 0, 0, 18)
@@ -4778,7 +4782,7 @@ Nav.createHud = function()
     oscarHeader.TextXAlignment = Enum.TextXAlignment.Left
     oscarHeader.Text = "Missão Great Rod of Oscar"
     oscarHeader.LayoutOrder = 2
-    oscarHeader.Parent = scrollQuest
+    oscarHeader.Parent = hudRefs.scrollQuest
 
     local oscarStatus = Instance.new("TextLabel")
     oscarStatus.Name = "OscarStatus"
@@ -4792,25 +4796,25 @@ Nav.createHud = function()
     oscarStatus.TextWrapped = true
     oscarStatus.Text = "—"
     oscarStatus.LayoutOrder = 3
-    oscarStatus.Parent = scrollQuest
-    statusLabels.oscar_overview = oscarStatus
+    oscarStatus.Parent = hudRefs.scrollQuest
+    hudRefs.statusLabels.oscar_overview = oscarStatus
 
-    oscarStartRow, oscarStartBtn, oscarRedoBtn = Nav.makeQuestControlRow(scrollQuest, 4, "oscar")
+    hudRefs.oscarStartRow, hudRefs.oscarStartBtn, hudRefs.oscarRedoBtn = Nav.makeQuestControlRow(hudRefs.scrollQuest, 4, "oscar")
 
-    oscarStepSections[1] = Nav.makeSection(scrollQuest, "Passo 1 — Ir ao NPC", "—", 5, MODES.OSCAR_STEP1)
-    oscarStepSections[2] = Nav.makeSection(scrollQuest, "Passo 2 — Ir ao Amulet", "—", 6, MODES.OSCAR_STEP2)
-    oscarStepSections[3] = Nav.makeSection(scrollQuest, "Passo 3 — Ir à ROD", "—", 7, MODES.OSCAR_STEP3)
+    hudRefs.oscarStepSections[1] = Nav.makeSection(hudRefs.scrollQuest, "Passo 1 — Ir ao NPC", "—", 5, MODES.OSCAR_STEP1)
+    hudRefs.oscarStepSections[2] = Nav.makeSection(hudRefs.scrollQuest, "Passo 2 — Ir ao Amulet", "—", 6, MODES.OSCAR_STEP2)
+    hudRefs.oscarStepSections[3] = Nav.makeSection(hudRefs.scrollQuest, "Passo 3 — Ir à ROD", "—", 7, MODES.OSCAR_STEP3)
 
-    pinionHeader = Instance.new("TextLabel")
-    pinionHeader.Size = UDim2.new(1, 0, 0, 18)
-    pinionHeader.BackgroundTransparency = 1
-    pinionHeader.Font = Enum.Font.GothamBold
-    pinionHeader.TextSize = 11
-    pinionHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
-    pinionHeader.TextXAlignment = Enum.TextXAlignment.Left
-    pinionHeader.Text = "Pinion Aria Rod Quest"
-    pinionHeader.LayoutOrder = 7
-    pinionHeader.Parent = scrollQuest
+    hudRefs.pinionHeader = Instance.new("TextLabel")
+    hudRefs.pinionHeader.Size = UDim2.new(1, 0, 0, 18)
+    hudRefs.pinionHeader.BackgroundTransparency = 1
+    hudRefs.pinionHeader.Font = Enum.Font.GothamBold
+    hudRefs.pinionHeader.TextSize = 11
+    hudRefs.pinionHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
+    hudRefs.pinionHeader.TextXAlignment = Enum.TextXAlignment.Left
+    hudRefs.pinionHeader.Text = "Pinion Aria Rod Quest"
+    hudRefs.pinionHeader.LayoutOrder = 7
+    hudRefs.pinionHeader.Parent = hudRefs.scrollQuest
 
     local pinionStatus = Instance.new("TextLabel")
     pinionStatus.Name = "PinionStatus"
@@ -4824,13 +4828,13 @@ Nav.createHud = function()
     pinionStatus.TextWrapped = true
     pinionStatus.Text = "—"
     pinionStatus.LayoutOrder = 8
-    pinionStatus.Parent = scrollQuest
-    statusLabels.pinion_overview = pinionStatus
+    pinionStatus.Parent = hudRefs.scrollQuest
+    hudRefs.statusLabels.pinion_overview = pinionStatus
 
-    pinionStartRow, pinionStartBtn, pinionRedoBtn = Nav.makeQuestControlRow(scrollQuest, 9, "pinion")
+    hudRefs.pinionStartRow, hudRefs.pinionStartBtn, hudRefs.pinionRedoBtn = Nav.makeQuestControlRow(hudRefs.scrollQuest, 9, "pinion")
 
-    pinionStepSections[1] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[1] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 1 — Desbloquear Vertigo",
         10,
         MODES.PINION_STEP1,
@@ -4838,8 +4842,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[2] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[2] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 2 — Pegar Isonade",
         11,
         MODES.PINION_STEP2,
@@ -4847,8 +4851,8 @@ Nav.createHud = function()
         false,
         true
     )
-    pinionStepSections[3] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[3] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 3 — Completar Bestiário",
         12,
         MODES.PINION_STEP3,
@@ -4856,8 +4860,8 @@ Nav.createHud = function()
         false,
         true
     )
-    pinionStepSections[4] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[4] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 4 — The Depths Key",
         13,
         MODES.PINION_STEP4,
@@ -4866,8 +4870,8 @@ Nav.createHud = function()
         true,
         Nav.teleportPinionStep4
     )
-    pinionStepSections[5] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[5] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 5 — Enchant Relic (Chaotic)",
         14,
         MODES.PINION_STEP5,
@@ -4876,8 +4880,8 @@ Nav.createHud = function()
         true,
         Nav.teleportPinionStep5
     )
-    pinionStepSections[6] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[6] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 6 — Quest Dj Spinous",
         15,
         MODES.PINION_STEP6,
@@ -4885,8 +4889,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[7] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[7] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 7 — Pescar Dj Spinous",
         16,
         MODES.PINION_STEP7,
@@ -4894,8 +4898,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[8] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[8] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 8 — Voltar quest Dj Spinous",
         17,
         MODES.PINION_STEP8,
@@ -4903,8 +4907,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[9] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[9] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 9",
         18,
         MODES.PINION_STEP9,
@@ -4912,11 +4916,11 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[10] = Nav.makePinionHeavensSteps1to4Section(scrollQuest, 19)
-    pinionStepSections[11] = Nav.makePinionHeavensStep5Section(scrollQuest, 20)
-    pinionStepSections[12] = Nav.makePinionHeavensStep6Section(scrollQuest, 21)
-    pinionStepSections[13] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[10] = Nav.makePinionHeavensSteps1to4Section(hudRefs.scrollQuest, 19)
+    hudRefs.pinionStepSections[11] = Nav.makePinionHeavensStep5Section(hudRefs.scrollQuest, 20)
+    hudRefs.pinionStepSections[12] = Nav.makePinionHeavensStep6Section(hudRefs.scrollQuest, 21)
+    hudRefs.pinionStepSections[13] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 11 — Obter Heavenly Harmonic Dove",
         22,
         MODES.PINION_STEP10,
@@ -4924,8 +4928,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[14] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[14] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 12 — Quest Dj Spinous",
         23,
         MODES.PINION_STEP11,
@@ -4933,8 +4937,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[15] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[15] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 13 — Pescar Dj Spinous",
         24,
         MODES.PINION_STEP12,
@@ -4942,8 +4946,8 @@ Nav.createHud = function()
         true,
         true
     )
-    pinionStepSections[16] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.pinionStepSections[16] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 14 — Voltar quest Dj Spinous",
         25,
         MODES.PINION_STEP13,
@@ -4952,16 +4956,16 @@ Nav.createHud = function()
         true
     )
 
-    duskwireHeader = Instance.new("TextLabel")
-    duskwireHeader.Size = UDim2.new(1, 0, 0, 18)
-    duskwireHeader.BackgroundTransparency = 1
-    duskwireHeader.Font = Enum.Font.GothamBold
-    duskwireHeader.TextSize = 11
-    duskwireHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
-    duskwireHeader.TextXAlignment = Enum.TextXAlignment.Left
-    duskwireHeader.Text = "Duskwire Rod Quest"
-    duskwireHeader.LayoutOrder = 26
-    duskwireHeader.Parent = scrollQuest
+    hudRefs.duskwireHeader = Instance.new("TextLabel")
+    hudRefs.duskwireHeader.Size = UDim2.new(1, 0, 0, 18)
+    hudRefs.duskwireHeader.BackgroundTransparency = 1
+    hudRefs.duskwireHeader.Font = Enum.Font.GothamBold
+    hudRefs.duskwireHeader.TextSize = 11
+    hudRefs.duskwireHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
+    hudRefs.duskwireHeader.TextXAlignment = Enum.TextXAlignment.Left
+    hudRefs.duskwireHeader.Text = "Duskwire Rod Quest"
+    hudRefs.duskwireHeader.LayoutOrder = 26
+    hudRefs.duskwireHeader.Parent = hudRefs.scrollQuest
 
     local duskwireStatus = Instance.new("TextLabel")
     duskwireStatus.Name = "DuskwireStatus"
@@ -4975,13 +4979,13 @@ Nav.createHud = function()
     duskwireStatus.TextWrapped = true
     duskwireStatus.Text = "—"
     duskwireStatus.LayoutOrder = 27
-    duskwireStatus.Parent = scrollQuest
-    statusLabels.duskwire_overview = duskwireStatus
+    duskwireStatus.Parent = hudRefs.scrollQuest
+    hudRefs.statusLabels.duskwire_overview = duskwireStatus
 
-    duskwireStartRow, duskwireStartBtn, duskwireRedoBtn = Nav.makeQuestControlRow(scrollQuest, 28, "duskwire")
+    hudRefs.duskwireStartRow, hudRefs.duskwireStartBtn, hudRefs.duskwireRedoBtn = Nav.makeQuestControlRow(hudRefs.scrollQuest, 28, "duskwire")
 
-    duskwireStepSections[1] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.duskwireStepSections[1] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 1 — Obter quest Duskwire",
         29,
         MODES.DUSKWIRE_STEP1,
@@ -4991,8 +4995,8 @@ Nav.createHud = function()
         nil,
         "duskwire"
     )
-    duskwireStepSections[2] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.duskwireStepSections[2] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 2 — Pescar Catfish",
         30,
         MODES.DUSKWIRE_STEP2,
@@ -5002,8 +5006,8 @@ Nav.createHud = function()
         nil,
         "duskwire"
     )
-    duskwireStepSections[3] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.duskwireStepSections[3] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 3 — Entregar missão e obter Duskwire",
         31,
         MODES.DUSKWIRE_STEP3,
@@ -5014,16 +5018,16 @@ Nav.createHud = function()
         "duskwire"
     )
 
-    tryhardHeader = Instance.new("TextLabel")
-    tryhardHeader.Size = UDim2.new(1, 0, 0, 18)
-    tryhardHeader.BackgroundTransparency = 1
-    tryhardHeader.Font = Enum.Font.GothamBold
-    tryhardHeader.TextSize = 11
-    tryhardHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
-    tryhardHeader.TextXAlignment = Enum.TextXAlignment.Left
-    tryhardHeader.Text = "TryHard Rod Quest"
-    tryhardHeader.LayoutOrder = 32
-    tryhardHeader.Parent = scrollQuest
+    hudRefs.tryhardHeader = Instance.new("TextLabel")
+    hudRefs.tryhardHeader.Size = UDim2.new(1, 0, 0, 18)
+    hudRefs.tryhardHeader.BackgroundTransparency = 1
+    hudRefs.tryhardHeader.Font = Enum.Font.GothamBold
+    hudRefs.tryhardHeader.TextSize = 11
+    hudRefs.tryhardHeader.TextColor3 = Color3.fromRGB(140, 148, 165)
+    hudRefs.tryhardHeader.TextXAlignment = Enum.TextXAlignment.Left
+    hudRefs.tryhardHeader.Text = "TryHard Rod Quest"
+    hudRefs.tryhardHeader.LayoutOrder = 32
+    hudRefs.tryhardHeader.Parent = hudRefs.scrollQuest
 
     local tryhardStatus = Instance.new("TextLabel")
     tryhardStatus.Name = "TryhardStatus"
@@ -5037,13 +5041,13 @@ Nav.createHud = function()
     tryhardStatus.TextWrapped = true
     tryhardStatus.Text = "—"
     tryhardStatus.LayoutOrder = 33
-    tryhardStatus.Parent = scrollQuest
-    statusLabels.tryhard_overview = tryhardStatus
+    tryhardStatus.Parent = hudRefs.scrollQuest
+    hudRefs.statusLabels.tryhard_overview = tryhardStatus
 
-    tryhardStartRow, tryhardStartBtn, tryhardRedoBtn = Nav.makeQuestControlRow(scrollQuest, 34, "tryhard")
+    hudRefs.tryhardStartRow, hudRefs.tryhardStartBtn, hudRefs.tryhardRedoBtn = Nav.makeQuestControlRow(hudRefs.scrollQuest, 34, "tryhard")
 
-    tryhardStepSections[1] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.tryhardStepSections[1] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 1 — Obter quest TryHard",
         35,
         MODES.TRYHARD_STEP1,
@@ -5053,8 +5057,8 @@ Nav.createHud = function()
         nil,
         "tryhard"
     )
-    tryhardStepSections[2] = Nav.makePinionQuestStepSection(
-        scrollQuest,
+    hudRefs.tryhardStepSections[2] = Nav.makePinionQuestStepSection(
+        hudRefs.scrollQuest,
         "Passo 2 — Ir à pesca (Flimsy Rod)",
         36,
         MODES.TRYHARD_STEP2,
@@ -5121,7 +5125,7 @@ end -- hud_create
 do -- hud_labels_core
 
 Nav.updateToggleVisuals = function()
-    for mode, btn in pairs(toggleButtons) do
+    for mode, btn in pairs(hudRefs.toggleButtons) do
         local isActive = mode == MODES.AUTO_SELL and autoSellEnabled or activeMode == mode
         if isActive then
             btn.Text = "ATIVO"
@@ -5143,14 +5147,14 @@ Nav.updateStatusLabelsFast = function()
     local level = Nav.getPlayerLevel()
     local coins = Nav.getPlayerCoins()
 
-    Nav.setLabelIfChanged(statusLabels.player, string.format(
+    Nav.setLabelIfChanged(hudRefs.statusLabels.player, string.format(
         "Level: %s  |  C$: %s",
         level and tostring(level) or "?",
         coins and Nav.formatCoins(coins) or "?"
     ))
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.AUTO_SELL],
+        hudRefs.statusLabels[MODES.AUTO_SELL],
         autoSellEnabled
             and string.format("Vendendo a cada %ds", SELL_ALL_INTERVAL)
             or string.format("Inativo — vende a cada %ds quando ativado", SELL_ALL_INTERVAL),
@@ -5161,24 +5165,24 @@ end
 Nav.updateStatusLabelsFarmLight = function()
     Nav.updateStatusLabelsFast()
     local farm = Nav.getInitialFarmStatus()
-    Nav.setLabelIfChanged(statusLabels[MODES.INITIAL_FARM], farm.label, farm.color)
+    Nav.setLabelIfChanged(hudRefs.statusLabels[MODES.INITIAL_FARM], farm.label, farm.color)
 end
 
 Nav.updateHomeTabLabels = function()
     local farm = Nav.getInitialFarmStatus()
-    Nav.setLabelIfChanged(statusLabels[MODES.INITIAL_FARM], farm.label, farm.color)
+    Nav.setLabelIfChanged(hudRefs.statusLabels[MODES.INITIAL_FARM], farm.label, farm.color)
 
     local relic = Nav.getRelicAvailability()
-    Nav.setLabelIfChanged(statusLabels[MODES.RELIC], relic.label, relic.color)
+    Nav.setLabelIfChanged(hudRefs.statusLabels[MODES.RELIC], relic.label, relic.color)
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.ENCHANT],
+        hudRefs.statusLabels[MODES.ENCHANT],
         "Clique em Teleportar para ir ao altar",
         Color3.fromRGB(170, 178, 195)
     )
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.XP_FARM],
+        hudRefs.statusLabels[MODES.XP_FARM],
         "Apenas teleporte — última área de farm (XP)",
         Color3.fromRGB(170, 178, 195)
     )
@@ -5194,20 +5198,20 @@ Nav.updateOscarQuestLabels = function()
     local oscarComplete = oscar.completed == true
     local oscarStarted = startInfo.started == true
 
-    Nav.updateQuestControlRow(oscarStartRow, oscarStartBtn, oscarRedoBtn, startInfo, oscarComplete)
+    Nav.updateQuestControlRow(hudRefs.oscarStartRow, hudRefs.oscarStartBtn, hudRefs.oscarRedoBtn, startInfo, oscarComplete)
 
-    for _, section in ipairs(oscarStepSections) do
+    for _, section in ipairs(hudRefs.oscarStepSections) do
         section.Visible = (oscarStarted and not oscarComplete) or questState.oscar.redoActive
     end
 
-    if statusLabels.oscar_overview then
+    if hudRefs.statusLabels.oscar_overview then
         local overviewHeight = 16
         if oscarComplete then
             overviewHeight = 28
         elseif not oscarComplete then
             overviewHeight = oscarStarted and 52 or (startInfo.canStart and 64 or 72)
         end
-        statusLabels.oscar_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
+        hudRefs.statusLabels.oscar_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
     end
 
     local overviewLabel = oscar.label
@@ -5225,12 +5229,12 @@ Nav.updateOscarQuestLabels = function()
         end
     end
 
-    Nav.setLabelIfChanged(statusLabels.oscar_overview, overviewLabel, overviewColor)
+    Nav.setLabelIfChanged(hudRefs.statusLabels.oscar_overview, overviewLabel, overviewColor)
 
     if (oscarComplete and not questState.oscar.redoActive) or not oscarStarted then return end
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.OSCAR_STEP1],
+        hudRefs.statusLabels[MODES.OSCAR_STEP1],
         oscar.step1Ready and "Requisitos P1: OK — lv 250 + C$2.500.000"
             or "Requisitos P1: lv 250 + C$2.500.000 necessários",
         oscar.step1Ready and Color3.fromRGB(80, 200, 100) or Color3.fromRGB(220, 170, 80)
@@ -5238,13 +5242,13 @@ Nav.updateOscarQuestLabels = function()
 
     local hasAmuletNow = Nav.hasAmulet()
     Nav.setLabelIfChanged(
-        statusLabels[MODES.OSCAR_STEP2],
+        hudRefs.statusLabels[MODES.OSCAR_STEP2],
         hasAmuletNow and "Amulet no inventário" or "Ir coletar o Amulet no local",
         hasAmuletNow and Color3.fromRGB(80, 200, 100) or Color3.fromRGB(170, 178, 195)
     )
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.OSCAR_STEP3],
+        hudRefs.statusLabels[MODES.OSCAR_STEP3],
         oscar.step3Ready
             and string.format("Requisitos P3: OK — lv %d + C$%s + Amulet", OSCAR_ROD_MIN_LEVEL, Nav.formatCoins(OSCAR_ROD_PRICE))
             or string.format("Requisitos P3: lv %d + C$%s + Amulet", OSCAR_ROD_MIN_LEVEL, Nav.formatCoins(OSCAR_ROD_PRICE)),
@@ -5273,13 +5277,13 @@ Nav.updatePinionQuestLabels = function()
     local showStep12 = questsActive and pinion.available and pinion.step9Done and pinion.step11Done and not pinion.step12Done
     local showStep13 = questsActive and pinion.available and pinion.step9Done and pinion.step12Done and not pinion.step13Done
 
-    Nav.updateQuestControlRow(pinionStartRow, pinionStartBtn, pinionRedoBtn, startInfo, pinion.completed == true)
+    Nav.updateQuestControlRow(hudRefs.pinionStartRow, hudRefs.pinionStartBtn, hudRefs.pinionRedoBtn, startInfo, pinion.completed == true)
 
-    if pinionHeader then
-        pinionHeader.Visible = true
+    if hudRefs.pinionHeader then
+        hudRefs.pinionHeader.Visible = true
     end
 
-    if statusLabels.pinion_overview then
+    if hudRefs.statusLabels.pinion_overview then
         local overviewHeight = 16
         if not pinion.completed then
             if not pinionStarted then
@@ -5290,7 +5294,7 @@ Nav.updatePinionQuestLabels = function()
         else
             overviewHeight = 28
         end
-        statusLabels.pinion_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
+        hudRefs.statusLabels.pinion_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
     end
 
     local overviewLabel = pinion.label
@@ -5305,10 +5309,10 @@ Nav.updatePinionQuestLabels = function()
         end
     end
 
-    Nav.setLabelIfChanged(statusLabels.pinion_overview, overviewLabel, overviewColor)
+    Nav.setLabelIfChanged(hudRefs.statusLabels.pinion_overview, overviewLabel, overviewColor)
 
     if pinion.completed and not questState.pinion.redoActive then
-        for _, section in ipairs(pinionStepSections) do
+        for _, section in ipairs(hudRefs.pinionStepSections) do
             section.Visible = false
         end
         return
@@ -5319,13 +5323,13 @@ Nav.updatePinionQuestLabels = function()
     end
 
     if not pinionStarted then
-        for _, section in ipairs(pinionStepSections) do
+        for _, section in ipairs(hudRefs.pinionStepSections) do
             section.Visible = false
         end
         return
     end
 
-    for i, section in ipairs(pinionStepSections) do
+    for i, section in ipairs(hudRefs.pinionStepSections) do
         if i <= 3 then
             section.Visible = showMainSteps
         elseif i == 4 then
@@ -5385,7 +5389,7 @@ Nav.updatePinionQuestLabels = function()
     if showMainSteps then
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.PINION_STEP1],
+        hudRefs.statusLabels[MODES.PINION_STEP1],
         pinion.step1Done
             and "Local visitado — bestiário Vertigo desbloqueado"
             or string.format(
@@ -5399,7 +5403,7 @@ Nav.updatePinionQuestLabels = function()
 
     local hasIsonadeNow = Nav.hasIsonade()
     Nav.setLabelIfChanged(
-        statusLabels[MODES.PINION_STEP2],
+        hudRefs.statusLabels[MODES.PINION_STEP2],
         pinion.step2Done
             and (hasIsonadeNow and "Isonade no inventário" or "Isonade marcada como obtida")
             or (not pinion.step1Done and "Conclua o Passo 1 antes"
@@ -5409,7 +5413,7 @@ Nav.updatePinionQuestLabels = function()
     )
 
     Nav.setLabelIfChanged(
-        statusLabels[MODES.PINION_STEP3],
+        hudRefs.statusLabels[MODES.PINION_STEP3],
         pinion.step3Done and "Bestiário Vertigo 100% — completo"
             or (pinion.vertigoProgress and string.format(
                 "Atual: %s%%",
@@ -5421,7 +5425,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep4 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP4],
+            hudRefs.statusLabels[MODES.PINION_STEP4],
             string.format(
                 "Equipa The Depths Key e teleporta — %.2f, %.2f, %.2f",
                 PINION_DEPTHS_KEY_SPOT.X,
@@ -5434,7 +5438,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep5 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP5],
+            hudRefs.statusLabels[MODES.PINION_STEP5],
             string.format(
                 "Enchant Relic (Chaotic) — teleporte: %.2f, %.2f, %.2f",
                 PINION_ENCHANT_RELIC_SPOT.X,
@@ -5447,7 +5451,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep6 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP6],
+            hudRefs.statusLabels[MODES.PINION_STEP6],
             string.format(
                 "Obter quest Dj Spinous — teleporte: %.2f, %.2f, %.2f",
                 PINION_STEP6_SPOT.X,
@@ -5460,7 +5464,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep7 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP7],
+            hudRefs.statusLabels[MODES.PINION_STEP7],
             string.format(
                 "Ir pescar Dj Spinous — teleporte: %.2f, %.2f, %.2f",
                 PINION_STEP7_SPOT.X,
@@ -5473,7 +5477,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep8 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP8],
+            hudRefs.statusLabels[MODES.PINION_STEP8],
             string.format(
                 "Voltar ao local da quest — teleporte: %.2f, %.2f, %.2f",
                 PINION_STEP6_SPOT.X,
@@ -5486,7 +5490,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep9 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP9],
+            hudRefs.statusLabels[MODES.PINION_STEP9],
             string.format(
                 "Teleportar — %.2f, %.2f, %.2f",
                 PINION_STEP9_SPOT.X,
@@ -5502,9 +5506,9 @@ Nav.updatePinionQuestLabels = function()
             local spot = PINION_HEAVENS_ROD_SPOTS[i]
             local stepKey = HEAVENS_STEP5_KEYS[i]
             local done = stepKey and pinionHeavensProgress[stepKey] == true
-            if spot and statusLabels[mode] then
+            if spot and hudRefs.statusLabels[mode] then
                 Nav.setLabelIfChanged(
-                    statusLabels[mode],
+                    hudRefs.statusLabels[mode],
                     done
                         and string.format("%d — concluído", i)
                         or string.format(
@@ -5522,7 +5526,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showHeavens6 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_HEAVENS_6],
+            hudRefs.statusLabels[MODES.PINION_HEAVENS_6],
             heavens.heavens6Done
                 and "Heaven's Rod final — concluído"
                 or string.format(
@@ -5537,7 +5541,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep10 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP10],
+            hudRefs.statusLabels[MODES.PINION_STEP10],
             pinion.step10Done
                 and "Heavenly Harmonic Dove — concluído"
                 or string.format(
@@ -5552,7 +5556,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep11 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP11],
+            hudRefs.statusLabels[MODES.PINION_STEP11],
             pinion.step11Done
                 and "Quest Dj Spinous — concluído"
                 or string.format(
@@ -5567,7 +5571,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep12 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP12],
+            hudRefs.statusLabels[MODES.PINION_STEP12],
             pinion.step12Done
                 and "Pescar Dj Spinous — concluído"
                 or string.format(
@@ -5582,7 +5586,7 @@ Nav.updatePinionQuestLabels = function()
 
     if showStep13 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.PINION_STEP13],
+            hudRefs.statusLabels[MODES.PINION_STEP13],
             pinion.step13Done
                 and "Voltar quest Dj Spinous — concluído"
                 or string.format(
@@ -5605,13 +5609,13 @@ Nav.updateDuskwireQuestLabels = function()
     local showStep2 = questsActive and duskwire.available and duskwire.step1Done and not duskwire.step2Done
     local showStep3 = questsActive and duskwire.available and duskwire.step2Done and not duskwire.step3Done
 
-    Nav.updateQuestControlRow(duskwireStartRow, duskwireStartBtn, duskwireRedoBtn, startInfo, duskwire.completed == true)
+    Nav.updateQuestControlRow(hudRefs.duskwireStartRow, hudRefs.duskwireStartBtn, hudRefs.duskwireRedoBtn, startInfo, duskwire.completed == true)
 
-    if duskwireHeader then
-        duskwireHeader.Visible = true
+    if hudRefs.duskwireHeader then
+        hudRefs.duskwireHeader.Visible = true
     end
 
-    if statusLabels.duskwire_overview then
+    if hudRefs.statusLabels.duskwire_overview then
         local overviewHeight = 16
         if not duskwire.completed then
             if not duskwireStarted then
@@ -5622,7 +5626,7 @@ Nav.updateDuskwireQuestLabels = function()
         else
             overviewHeight = 28
         end
-        statusLabels.duskwire_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
+        hudRefs.statusLabels.duskwire_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
     end
 
     local overviewLabel = duskwire.label
@@ -5637,10 +5641,10 @@ Nav.updateDuskwireQuestLabels = function()
         end
     end
 
-    Nav.setLabelIfChanged(statusLabels.duskwire_overview, overviewLabel, overviewColor)
+    Nav.setLabelIfChanged(hudRefs.statusLabels.duskwire_overview, overviewLabel, overviewColor)
 
     if duskwire.completed and not questState.duskwire.redoActive then
-        for _, section in ipairs(duskwireStepSections) do
+        for _, section in ipairs(hudRefs.duskwireStepSections) do
             section.Visible = false
         end
         return
@@ -5651,13 +5655,13 @@ Nav.updateDuskwireQuestLabels = function()
     end
 
     if not duskwireStarted then
-        for _, section in ipairs(duskwireStepSections) do
+        for _, section in ipairs(hudRefs.duskwireStepSections) do
             section.Visible = false
         end
         return
     end
 
-    for i, section in ipairs(duskwireStepSections) do
+    for i, section in ipairs(hudRefs.duskwireStepSections) do
         if i == 1 then
             section.Visible = showStep1
         elseif i == 2 then
@@ -5673,7 +5677,7 @@ Nav.updateDuskwireQuestLabels = function()
 
     if showStep1 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.DUSKWIRE_STEP1],
+            hudRefs.statusLabels[MODES.DUSKWIRE_STEP1],
             duskwire.step1Done
                 and "Obter quest Duskwire — concluído"
                 or string.format(
@@ -5688,7 +5692,7 @@ Nav.updateDuskwireQuestLabels = function()
 
     if showStep2 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.DUSKWIRE_STEP2],
+            hudRefs.statusLabels[MODES.DUSKWIRE_STEP2],
             duskwire.step2Done
                 and "Pescar Catfish — concluído"
                 or string.format(
@@ -5703,7 +5707,7 @@ Nav.updateDuskwireQuestLabels = function()
 
     if showStep3 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.DUSKWIRE_STEP3],
+            hudRefs.statusLabels[MODES.DUSKWIRE_STEP3],
             duskwire.step3Done
                 and "Entregar missão — concluído"
                 or string.format(
@@ -5725,13 +5729,13 @@ Nav.updateTryhardQuestLabels = function()
     local showStep1 = questsActive and tryhard.available and not tryhard.step1Done
     local showStep2 = questsActive and tryhard.available and tryhard.step1Done and not tryhard.step2Done
 
-    Nav.updateQuestControlRow(tryhardStartRow, tryhardStartBtn, tryhardRedoBtn, startInfo, tryhard.completed == true)
+    Nav.updateQuestControlRow(hudRefs.tryhardStartRow, hudRefs.tryhardStartBtn, hudRefs.tryhardRedoBtn, startInfo, tryhard.completed == true)
 
-    if tryhardHeader then
-        tryhardHeader.Visible = true
+    if hudRefs.tryhardHeader then
+        hudRefs.tryhardHeader.Visible = true
     end
 
-    if statusLabels.tryhard_overview then
+    if hudRefs.statusLabels.tryhard_overview then
         local overviewHeight = 16
         if not tryhard.completed then
             if not tryhardStarted then
@@ -5742,7 +5746,7 @@ Nav.updateTryhardQuestLabels = function()
         else
             overviewHeight = 28
         end
-        statusLabels.tryhard_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
+        hudRefs.statusLabels.tryhard_overview.Size = UDim2.new(1, 0, 0, overviewHeight)
     end
 
     local overviewLabel = tryhard.label
@@ -5752,10 +5756,10 @@ Nav.updateTryhardQuestLabels = function()
         overviewColor = Color3.fromRGB(80, 200, 100)
     end
 
-    Nav.setLabelIfChanged(statusLabels.tryhard_overview, overviewLabel, overviewColor)
+    Nav.setLabelIfChanged(hudRefs.statusLabels.tryhard_overview, overviewLabel, overviewColor)
 
     if tryhard.completed and not questState.tryhard.redoActive then
-        for _, section in ipairs(tryhardStepSections) do
+        for _, section in ipairs(hudRefs.tryhardStepSections) do
             section.Visible = false
         end
         return
@@ -5766,13 +5770,13 @@ Nav.updateTryhardQuestLabels = function()
     end
 
     if not tryhardStarted then
-        for _, section in ipairs(tryhardStepSections) do
+        for _, section in ipairs(hudRefs.tryhardStepSections) do
             section.Visible = false
         end
         return
     end
 
-    for i, section in ipairs(tryhardStepSections) do
+    for i, section in ipairs(hudRefs.tryhardStepSections) do
         if i == 1 then
             section.Visible = showStep1
         elseif i == 2 then
@@ -5785,7 +5789,7 @@ Nav.updateTryhardQuestLabels = function()
 
     if showStep1 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.TRYHARD_STEP1],
+            hudRefs.statusLabels[MODES.TRYHARD_STEP1],
             tryhard.step1Done
                 and "Obter quest TryHard — concluído"
                 or string.format(
@@ -5800,7 +5804,7 @@ Nav.updateTryhardQuestLabels = function()
 
     if showStep2 then
         Nav.setLabelIfChanged(
-            statusLabels[MODES.TRYHARD_STEP2],
+            hudRefs.statusLabels[MODES.TRYHARD_STEP2],
             tryhard.step2Done
                 and "Ir à pesca — concluído (Flimsy Rod equipada)"
                 or string.format(
@@ -5816,7 +5820,7 @@ end
 
 Nav.updateQuestRodsTabLabels = function()
     local progText, progColor = Nav.getRodProgressionStatus()
-    Nav.setLabelIfChanged(statusLabels.rod_progression, progText, progColor)
+    Nav.setLabelIfChanged(hudRefs.statusLabels.rod_progression, progText, progColor)
 
     Nav.updateOscarQuestLabels()
     Nav.updatePinionQuestLabels()
@@ -5838,7 +5842,7 @@ updateHudVisuals = function(fullScan)
         end
         lastFarmHudUpdateAt = now
         Nav.updateStatusLabelsFarmLight()
-        if activeHudTab == "quest" then
+        if hudRefs.activeHudTab == "quest" then
             Nav.updateQuestRodsTabLabels()
         end
         return
@@ -5853,7 +5857,7 @@ end
 Nav.updateStatusLabelsFull = function()
     if activeMode == MODES.INITIAL_FARM then
         Nav.updateStatusLabelsFarmLight()
-        if activeHudTab == "quest" then
+        if hudRefs.activeHudTab == "quest" then
             Nav.updateQuestRodsTabLabels()
         end
         return
@@ -5867,32 +5871,32 @@ end
 end -- hud_labels_refresh
 
 bindQuestUiRefs = function()
-    questUi.oscarStartRow = oscarStartRow
-    questUi.oscarStartBtn = oscarStartBtn
-    questUi.oscarRedoBtn = oscarRedoBtn
-    questUi.oscarStepSections = oscarStepSections
-    questUi.pinionStartRow = pinionStartRow
-    questUi.pinionStartBtn = pinionStartBtn
-    questUi.pinionRedoBtn = pinionRedoBtn
-    questUi.pinionHeader = pinionHeader
-    questUi.pinionStepSections = pinionStepSections
-    questUi.pinionCompleteButtons = pinionCompleteButtons
-    questUi.pinionUndoButtons = pinionUndoButtons
-    questUi.duskwireStartRow = duskwireStartRow
-    questUi.duskwireStartBtn = duskwireStartBtn
-    questUi.duskwireRedoBtn = duskwireRedoBtn
-    questUi.duskwireHeader = duskwireHeader
-    questUi.duskwireStepSections = duskwireStepSections
-    questUi.duskwireCompleteButtons = duskwireCompleteButtons
-    questUi.duskwireUndoButtons = duskwireUndoButtons
-    questUi.tryhardStartRow = tryhardStartRow
-    questUi.tryhardStartBtn = tryhardStartBtn
-    questUi.tryhardRedoBtn = tryhardRedoBtn
-    questUi.tryhardHeader = tryhardHeader
-    questUi.tryhardStepSections = tryhardStepSections
-    questUi.tryhardCompleteButtons = tryhardCompleteButtons
-    questUi.tryhardUndoButtons = tryhardUndoButtons
-    questUi.statusLabels = statusLabels
+    questUi.oscarStartRow = hudRefs.oscarStartRow
+    questUi.oscarStartBtn = hudRefs.oscarStartBtn
+    questUi.oscarRedoBtn = hudRefs.oscarRedoBtn
+    questUi.oscarStepSections = hudRefs.oscarStepSections
+    questUi.pinionStartRow = hudRefs.pinionStartRow
+    questUi.pinionStartBtn = hudRefs.pinionStartBtn
+    questUi.pinionRedoBtn = hudRefs.pinionRedoBtn
+    questUi.pinionHeader = hudRefs.pinionHeader
+    questUi.pinionStepSections = hudRefs.pinionStepSections
+    questUi.pinionCompleteButtons = hudRefs.pinionCompleteButtons
+    questUi.pinionUndoButtons = hudRefs.pinionUndoButtons
+    questUi.duskwireStartRow = hudRefs.duskwireStartRow
+    questUi.duskwireStartBtn = hudRefs.duskwireStartBtn
+    questUi.duskwireRedoBtn = hudRefs.duskwireRedoBtn
+    questUi.duskwireHeader = hudRefs.duskwireHeader
+    questUi.duskwireStepSections = hudRefs.duskwireStepSections
+    questUi.duskwireCompleteButtons = hudRefs.duskwireCompleteButtons
+    questUi.duskwireUndoButtons = hudRefs.duskwireUndoButtons
+    questUi.tryhardStartRow = hudRefs.tryhardStartRow
+    questUi.tryhardStartBtn = hudRefs.tryhardStartBtn
+    questUi.tryhardRedoBtn = hudRefs.tryhardRedoBtn
+    questUi.tryhardHeader = hudRefs.tryhardHeader
+    questUi.tryhardStepSections = hudRefs.tryhardStepSections
+    questUi.tryhardCompleteButtons = hudRefs.tryhardCompleteButtons
+    questUi.tryhardUndoButtons = hudRefs.tryhardUndoButtons
+    questUi.statusLabels = hudRefs.statusLabels
 end
 
 end -- hud
